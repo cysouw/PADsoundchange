@@ -1,121 +1,73 @@
+
 #' # === read PAD data ===
+
+# results in two objects:
+# - the alignments in a character matrix called "align"
+# - information on the villages in a dataframe called "doculects"
 source("code/readPAD.R")
 
+# alignments with too little data are removed
 
 #' # === Simplify orthography ===
 
 # more than 4000 different segments in the data
-length(unique(na.omit(as.character(all))))
+length(unique(na.omit(as.character(align))))
 
 # simplify orthography
-library(qlcTokenize)
-# prepare a draft profile to be edited by hand
-# write.profile(all, file = "draftprofile.tsv", normalize = "NFD", sep = "", editing = TRUE)
-
-#simplify data using edited profile
-simple <- tokenize(all, profile = "data/profile.tsv", transliterate = "Replacement", sep = "", normalize = "NFD")$strings$transliterated
-dim(simple) <- dim(all)
-dimnames(simple) <- dimnames(all)
+# results in an object called "simple" with same structure as "align"
+source("code/simplifyOrthography.R")
 
 # still almost 1000 different segments
 length(unique(na.omit(as.character(simple))))
 
+
 #' # === Global similarity between villages ===
 
-library(qlcMatrix)
-sim.locations <- sim.obs(simple)
-
-# make "dialect" groups
-library(apcluster)
-clusters <- apcluster(sim.locations, q = 0.2)
-hier <- aggExCluster(sim.locations,clusters)
-
-# reformat output of apcluster
-cl.vec <- c()
-for (i in 1:length(clusters@clusters)){cl.vec[clusters[[i]]] <- i}
-n <- max(cl.vec)
-
-# plot dialects
-library(qlcVisualize)
-library(mapdata)
-
-coordinates <- doculects[,c(1,2)]
-
-#+ fig.width = 7, fig.height = 9
-map("worldHires", "Germany", fill = TRUE, col = "grey90")
-lmap(coordinates, cl.vec, draw = 1:n, levels = 0.25, cex.legend = 0.5, col = sample(rainbow(n)), position = "topleft", add = TRUE)
-
+# this step is not important for the sound change
+# just a quick look at the global structure
+# two different visualisations of a clustering on the raw data
+source("code/clusterVillages.R")
 
 #' # === Similarity between alignments ===
 
 library(qlcMatrix)
 
-all2 <- t(simple)
-all2[all2=="-"] <- NA
-sim <- sim.obs(all2)
-
+# do not count shared gaps as similarity
+# because then completely different alignments with many gaps get similar
+tmp <- t(simple)
+tmp[tmp == "-"] <- NA
+sim <- sim.obs(tmp)
+rm(tmp)
 
 #' # === Clustering of alignments ===
 
 # maximum at 30 clusters
-library(fpc)
-range <- 20:40
-p <- pamk(as.dist(1-sim), krange = range, critout = TRUE)
+source("code/clusterAlignments.R")
 
-# show clustering fit
-#+ fig.width = 5, fig.height = 5
-plot(range, p$crit[range], type = "b", xlab = "Number of clusters", ylab = "Fit")
+# the clustering-vector is in the objects "clusters"
+# difficult to classify columns have been removed as NA
+# how many?
+sum(is.na(clusters))
 
-# remove alignments that do not fit in a cluster
-# this workaround is necessary because of reordering
-library(cluster)
-cl <- p$pamobject$clustering
-sil <- silhouette(cl,as.dist(1-sim))
-cl[sil[,"sil_width"] < 0] <- NA
 
 #' # === Visual inspection of clusters
 
-library(qlcVisualize)
-
-draw.cluster <- function(cluster
-						, ncol = 6
-						, order = "R2E"
-						, member = cl
-						, method = "poi"
-						, ...
-						) {
-
-	limage(simple[,which(member ==  cluster)]
-		, col = rainbow(ncol)
-		, order =  order
-		, method = method
-		, cex.axis = 0.3
-		, cex.legend = 0.7
-		, cex.remaining = 0.2
-		, show.remaining =  TRUE
-		, ...
-		)
-
-}
-
-draw.line <- function(h, lwd = 1) {
-	segments(rep(0,length(h))
-			, rep(h, length(h))
-			, rep(183, length(h))
-			, rep(h, length(h))
-			, lwd = lwd
-			)
-}
+# two help function for easier visualisation
+# - draw.cluster based on "limage"
+# - draw.line to add separation lines into the plots
+source("code/visualizeClusters.R")
 
 # possibly make new groups
-m <- cl
+original <- clusters
 
 renew <- function(cluster, range, new_number, order = ordering) {
-	m[which(cl==cluster)[order$cols[range]]] <<- new_number
+	clusters[which(clusters==cluster)[order$cols[range]]] <<- new_number
 }
 
 # ======
-#+ fig.width = 10, fig.height = 7
+
+#+ fig.width = 11, fig.height = 6
+dev.new(width = 11, height = 6)
 
 # a short/long
 ordering <- draw.cluster(1, 10) 
@@ -125,7 +77,7 @@ ordering <- draw.cluster(2)
 	# b/_en 
 	draw.line(25)
 	renew(2, 26:29, 31)
-ordering <- draw.cluster(2, member = m)
+ordering <- draw.cluster(2)
 	# b/_e
 	draw.line(22) 	
 	renew(2, 23:25, 32)

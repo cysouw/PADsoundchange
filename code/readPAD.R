@@ -41,31 +41,40 @@ read.PAD <- function(file) {
 # 
 
 files <- list.files("sources/PAD merged/", full.names = TRUE)
-all <- sapply(files, read.PAD)
+align <- sapply(files, read.PAD)
 
-nr_words <- rep(1:length(all),sapply(all,function(x){dim(x)[2]}))
-cols <- unlist(sapply(all,colnames))
-all <- do.call(cbind,all)
-rows <- rownames(all)
+# nr_words <- rep(1:length(all),sapply(all,function(x){dim(x)[2]}))
+
+cols <- unlist(sapply(align,colnames))
+align <- do.call(cbind,align)
 words <- gsub("_.+\\.msa\\.V\\d+","",names(cols))
 words <- gsub("sources/PAD merged//", "", words)
-nr_cols <- gsub(".+\\.V(\\d+)$","\\1",names(cols),perl=T)
+nr_cols <- gsub(".+\\.V(\\d+)$","\\1",names(cols), perl=T)
 nr_cols <- as.numeric(nr_cols)-2
+
 
 # === remove columns with too little data
 
+missing <- apply(align,2,function(x){sum(na.omit(x)=="-")+sum(is.na(x))})
 ignore <- 120
 
-missing <- apply(all,2,function(x){sum(na.omit(x)=="-")+sum(is.na(x))})
-all <- all[,missing < ignore]
+# histogram
+hist(missing
+	, xlab = "Number of missing/gap characters"
+	, main = "Free parameter\nwhich alignments to ignore"
+	, breaks = 100
+	)
+abline(v = ignore, col = "red")
+
+# adapt data
+align <- align[,missing < ignore]
 cols <- cols[missing < ignore]
 words <- words[missing < ignore]
-nr_words <- nr_words[missing < ignore]
 nr_cols <- nr_cols[missing < ignore]
 
-colnames(all) <- paste(1:ncol(all), words, nr_cols, cols)
+colnames(align) <- paste(1:ncol(align), words, nr_cols, cols)
+
 
 # == clean up
 
-rm(files)
-rm(read.PAD)
+rm(files, read.PAD, cols, words, nr_cols, ignore, missing)
