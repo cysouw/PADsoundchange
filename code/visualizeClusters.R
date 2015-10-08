@@ -15,9 +15,9 @@ draw.cluster <- function(cluster
 		, col = rainbow(ncol)
 		, order =  order
 		, method = method
-		, cex.axis = 0.3
+		, cex.axis = 0.7
 		, cex.legend = 0.7
-		, cex.remaining = 0.2
+		, cex.remaining = 0.5
 		, show.remaining =  TRUE
 		, ...
 		)
@@ -35,3 +35,12 @@ draw.line <- function(h, lwd = 1) {
 			)
 }
 
+# function to list most frequent sounds per cluster
+
+stats <- function(clusters, alignments) {
+	sapply(unique(clusters), function(clus) {
+		c(sort(table(alignments[,clusters == clus]), decreasing = TRUE)[1:5]
+		, cols = sum(clusters == clus)
+		)
+	}, simplify = FALSE)
+}
