@@ -1,12 +1,25 @@
+#' ---
+#' title: "Historical reconstruction of PAD data"
+#' author: "Michael Cysouw"
+#' date: "`r Sys.Date()`"
+#' ---
+
+
+#' # === necessary libraries ===
+
+# require(qlcMatrix)
+# require(qlcData)
+# require(qlcVisualize)
+# require(showtext)
+
 
 #' # === read PAD data ===
 
 # results in two objects:
 # - the alignments in a character matrix called "align"
 # - information on the villages in a dataframe called "doculects"
-source("code/readPAD.R")
-
 # alignments with too little data are removed
+source("code/readPAD.R")
 
 
 #' # === Simplify orthography ===
@@ -44,9 +57,10 @@ rm(tmp)
 
 # looking for clusters of alignments
 # this approach result in very many small clusters
-library(apcluster)
-p <- apcluster(sim)
-clusters <- labels(p, type = "enum")
+# p <- apcluster::apcluster(sim)
+# clusters <- apcluster::labels(p, type = "enum")
+# max(clusters)
+# rm(p)
 
 # the following approach is more involved, based on PAM
 # maximum at 30 clusters
@@ -54,15 +68,25 @@ clusters <- labels(p, type = "enum")
 # the clustering-vector is  also in the objects "clusters" (will be overwritten!)
 # difficult to classify columns have been removed as NA
 
+clusters <- cutree(hclust(as.dist(-sim)),h = -0.01)
+max(clusters)
 
-#' # === Visual inspection of clusters
+#' # === inspection of clusters ===
 
-# two help function for easier visualisation
+# help function for visualisation
 # - draw.cluster based on "limage"
 # - draw.line to add separation lines into the plots
+# - plot.cluster to send drawings to PDF
 source("code/visualizeClusters.R")
+
+# add one image to the output
+draw.cluster(1)
+
+# save all images as PDF
+sapply(1:max(clusters), plot.cluster)
+
+# most frequent sounds per cluster
+stats(clusters, simple)
 
 # manual inspection of the PAM-based clustering is in:
 # ==> source("code/PAMclusterManual.R")
-
-stats(clusters, simple)

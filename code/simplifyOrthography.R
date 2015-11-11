@@ -1,11 +1,8 @@
-# Simplify orthography using qlcTokenize
-library(qlcTokenize)
-
 # prepare a draft profile to be edited by hand:
-# write.profile(align, file = "draftprofile.tsv", normalize = "NFD", sep = "", editing = TRUE)
+# qlcData::write.profile(align, file = "draftprofile.tsv", normalize = "NFD", sep = "", editing = TRUE)
 
 # simplify data using edited profile
-simple <- tokenize(align
+simple <- qlcData::tokenize(align
 				, profile = "data/profile.tsv"
 				, transliterate = "Replacement"
 				, sep = ""

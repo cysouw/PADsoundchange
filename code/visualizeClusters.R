@@ -1,27 +1,19 @@
 # visualisation of clusters
 # using function "limage" with different defaults
 
-library(qlcVisualize)
+draw.cluster <- function(cluster) {
 
-draw.cluster <- function(cluster
-						, ncol = 6
+	columns <- simple[ , clusters == cluster]				
+	qlcVisualize::limage(columns
+						, col = rainbow(8)
 						, order = "R2E"
-						, cl = clusters
 						, method = "poi"
-						, ...
-						) {
-
-	limage(simple[,which(cl ==  cluster)]
-		, col = rainbow(ncol)
-		, order =  order
-		, method = method
-		, cex.axis = 0.7
-		, cex.legend = 0.7
-		, cex.remaining = 0.5
-		, show.remaining =  TRUE
-		, ...
-		)
-
+						, show.remaining = TRUE
+						, cex.axis = 1
+						, cex.remaining = .5
+						, cex.legend = 2
+						, font = "Charis SIL"
+						)
 }
 
 # simple function to draw lines in limage-plot
@@ -35,6 +27,31 @@ draw.line <- function(h, lwd = 1) {
 			)
 }
 
+# drawing to PDF
+
+plot.cluster <- function(cluster) {
+	
+	# PDF device
+	
+	filename <- paste0("images/", cluster, ".pdf")
+	dev.new(file = filename 
+			, width = nrow(align)/6+1
+			, height = max(table(clusters))/6+1
+			, type = "pdf"
+			)
+
+	# plotting the image
+		
+	sysfonts::font.add(family = "Charis SIL", regular = "CharisSIL-R.ttf")
+	showtext::showtext.begin()
+
+	draw.cluster(cluster)
+	
+	showtext::showtext.end()
+	dev.off()
+}
+
+
 # function to list most frequent sounds per cluster
 
 stats <- function(clusters, alignments) {
@@ -44,3 +61,4 @@ stats <- function(clusters, alignments) {
 		)
 	}, simplify = FALSE)
 }
+
